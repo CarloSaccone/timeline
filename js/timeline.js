@@ -1,5 +1,9 @@
+//https://github.com/mquan/timeline
+
 //use popup plugin
 (function () {
+
+
 var tokenRegex = /\{([^\}]+)\}/g,
     objNotationRegex = /(?:(?:^|\.)(.+?)(?=\[|\.|$|\()|\[('|")(.+?)\2\])(\(\))?/g, // matches .xxxxx or ["xxxxx"] to run over object properties
     replacer = function (all, key, obj) {
@@ -123,87 +127,190 @@ var tokenRegex = /\{([^\}]+)\}/g,
 
 (function () {
 Raphael.fn.timeline = {
-	draw: function(options, fclick) {
-		var settings = {color: options.color || '#f00',
-						normal_r: options.normal_r || 7,
-						highlight_r: options.highlight_r || 10,
-						highlight_fill: options.highlight_fill || options.color || '#f00',
-						normal_fill: options.normal_fill || '#fff',
-						popup_text_attr: options.popup_text_attr || {fill:'#000', font: '10px verdana, arial, helvetica, sans-serif'},
-						popup_attr: options.popup_attr || {fill: options.normal_fill||'#fff', "stroke-width":2, stroke: options.color||'#f00'},
-						select_index: options.select_index || 0
-						},
-			//sort events by date in ascending order
-			sorted_events = options.events.sort(TimelineHelper.sort_by_date(false)),
-			pixels_per_day = 100,
-			days_range = TimelineHelper.days_diff(sorted_events[0].date, sorted_events[sorted_events.length-1].date);	
+    draw: function (options, fclick) {
+	    var settings = {
+	        color: options.color || '#ddd',
+	        normal_r: options.normal_r || 7,
+	        highlight_r: options.highlight_r || 10,
+	        highlight_fill: options.highlight_fill || options.color || '#ddd',
+	        normal_fill: options.normal_fill || '#fff',
+	        popup_text_attr: options.popup_text_attr || { fill: '#000', font: '10px verdana, arial, helvetica, sans-serif' },
+	        info_text_attr: options.info_text_attr || { fill: '#000', font: '10px verdana, arial, helvetica, sans-serif' },
+	        popup_attr: options.popup_attr || { fill: options.normal_fill || '#fff', "stroke-width": 2, stroke: options.color || '#ddd' },
+	        select_index: options.select_index || -1,
+	        paper_width: this.canvas.parentElement.offsetWidth,
+	        paper_height: options.dataset.length * 100,
+	    };
+        //set paper size & bg
+	    this.setSize(settings.paper_width, settings.paper_height)
+
+	    //extract events & row labels
+	    var events = [];
+	    var lineInfo = [];
+	    var multiLineEvents = [];
+	    for (var i in options.dataset) {
+	        events = events.concat(options.dataset[i].events)
+	        lineInfo = lineInfo.concat(options.dataset[i].lineInfo)
+	        multiLineEvents.push(options.dataset[i].events);
+	    }
+
+	    trace(multiLineEvents)
+
+
+	    //assign offsets to events based on their own line
+	    var offset = 0;
+	    var lineHeight = this.height / multiLineEvents.length;
+	    for (var i in multiLineEvents) {
+	        offset = offset + lineHeight - 30;
+	        for (var j in multiLineEvents[i]) {
+	            multiLineEvents[i][j].y_offset = offset;
+	            multiLineEvents[i][j].datasetIndex = i;
+	            multiLineEvents[i][j].elementIndex = j;
+	        }
+	    }
+
+	    //flatten events
+	    var allEvents = [].concat.apply([], multiLineEvents);
+
+	    //sort events by date in ascending order
+	    var sorted_events = allEvents.sort(TimelineHelper.sort_by_date(false));
+	    var pixels_per_day = 100;
+		var	days_range = TimelineHelper.days_diff(sorted_events[0].date, sorted_events[sorted_events.length-1].date);	
 		
 		
-		//calculate the range in days, avoid division by 0
+	    //calculate the pixels_per_day, avoid division by 0
+		//trace("days_range: " + days_range)
 		if (days_range > 0) {
 			pixels_per_day = (this.width-60)/days_range;
 		}
 
-		this.timeline.draw_timescale(sorted_events, {x_offset: 30, days_range: days_range});
-
-		dots = this.timeline.draw_events(sorted_events, settings, {pixels_per_day: pixels_per_day, x_offset: 30, y_offset: this.height-70}, fclick);
-		TimelineHelper.highlight(sorted_events, dots, settings.select_index, fclick, settings);	
+		//draw events
+		dots = this.timeline.draw_events(sorted_events, multiLineEvents, lineInfo, settings, { pixels_per_day: pixels_per_day, x_offset: 40 }, fclick);
+		
+        //draw timescale
+		this.timeline.draw_timescale(sorted_events, { x_offset: 40, days_range: days_range });
 	},
 	
-	draw_events: function(events, settings, params, fclick) {
-		var dots = [],
-			last = params.x_offset,
-			title = this.text(40, params.y_offset - 25, 'title').attr(settings.popup_text_attr).attr({'font-weight': 'bold', 'font-size': '12px'}),
-			date = this.text(40, params.y_offset-10, 'date').attr(settings.popup_text_attr),
-			label = this.set().push(title, date).hide(),
-			popup = '';
+	draw_events: function(events, dataset,lineinfo, settings, params, fclick) {
+	    var dots = [],
+			last = params.x_offset;
+			
 						
-		for(var i=0;i<events.length;i++) {
-			var center = TimelineHelper.getX(events[0].date, events[i].date, params.pixels_per_day) + params.x_offset;
-			if(i > 0) {
-				last = TimelineHelper.getX(events[0].date, events[i-1].date, params.pixels_per_day) + params.x_offset;
-				if(center < (last + settings.normal_r*2)) { //guarantee no overlapped with last node
+		for (var i = 0; i < events.length; i++) {
+		    var lineColor = events[i].color || settings.color;
+		    var circleColor = events[i].circleColor || lineColor;
+		    var circleFill = events[i].circleFill || settings.normal_fill;
+		    var datasetIndex = events[i].datasetIndex;
+		    var elementIndex = events[i].elementIndex;
+
+		    //popup
+		    var title = this.text(40, events[i].y_offset - 25, 'title').attr(settings.popup_text_attr).attr({ 'font-weight': 'bold', 'font-size': '12px' }),
+			    date = this.text(40, events[i].y_offset - 10, 'date').attr(settings.popup_text_attr),
+			    label = this.set().push(title, date).hide(),
+			    popup = '';
+
+		    //compute center
+		    var currentLine = dataset[datasetIndex];
+		    var firstDateInLine = currentLine[0].date;
+		    var center = TimelineHelper.getX(events[0].date, events[i].date, params.pixels_per_day) + params.x_offset;
+		    
+
+            //if the current event is not the first of his line
+		    if (events[i].date != firstDateInLine) {
+		        //get last x
+		        var xoffset = TimelineHelper.getX(events[0].date,firstDateInLine, params.pixels_per_day);
+		        
+		        last = TimelineHelper.getX(firstDateInLine, currentLine[elementIndex - 1].date, params.pixels_per_day) + params.x_offset;
+		        last += xoffset;
+		        if (center < (last + settings.normal_r * 2)) { //guarantee no overlapped with last node
 					center = last + settings.normal_r*2;
 				}
 				//if center > width then resize the width 
-				this.path('M'+ last + ' ' + params.y_offset + 'L' + center + ' ' + params.y_offset).attr({stroke:settings.color, "stroke-width":3}).toBack();
-			}
+				this.path('M' + last + ' ' + events[i].y_offset + 'L' + center + ' ' + events[i].y_offset).attr({ stroke: lineColor, "stroke-width": 10 }).toBack();
+		    }
+		    else {
+		        //write line info
+		        var currentLineInfo = lineinfo[datasetIndex];
+		        settings.info_text_attr['text-anchor'] = settings.info_text_attr['text-anchor'] || 'start';
+		        this.text(center, events[i].y_offset + 15, currentLineInfo).attr(settings.info_text_attr);
+		    }
+		    var drawElements =[]
+		    //draw normal circle
+		    if (events[i].marker) {
+		        //draw marker
+		        dots[i] = this.circle(center, events[i].y_offset, settings.normal_r * 2).attr({ fill: circleFill, stroke: circleColor, "stroke-width": 2 });
+		        var marker = this.text(center, events[i].y_offset, events[i].marker)//'\uf09a'
+		        marker.attr('font-size', 16);
+		        marker.attr('fill', events[i].marker_fill);
+		        marker.attr('font-family', 'FontAwesome');
+		        drawElements.push(dots[i]);
+		        drawElements.push(marker);
+		        
+		    }
+		    else if (events[i].marker_outside) {
+		        //draw marker
+		        dots[i] = this.circle(center, events[i].y_offset, settings.normal_r).attr({ fill: circleFill, stroke: circleColor, "stroke-width": 2 });
+		        var marker = this.text(center, events[i].y_offset - 20, events[i].marker_outside)//'\uf09a'
+		        marker.attr('font-size', 20);
+		        marker.attr('fill', events[i].marker_fill);
+		        marker.attr('font-family', 'FontAwesome');
+		        drawElements.push(dots[i]);
+		    }
+		    else {
+		        dots[i] = this.circle(center, events[i].y_offset, settings.normal_r).attr({ fill: circleFill, stroke: circleColor, "stroke-width": 2 });
+		        drawElements.push(dots[i]);
+		       
+		    }
 
-			dots[i] = this.circle(center, params.y_offset, settings.normal_r).attr({fill:settings.normal_fill, stroke:settings.color,"stroke-width":2});
 			
-			(function (canvas, event) {
-				dots[i].hover(function() {
-					this.attr({r: settings.highlight_r});
-					var name = (event.name.length > 40)? event.name.substring(0, 40) + "..." : event.name;
-					title.attr({text: name});
-					date.attr({text: event.date});
-					label.show();
-					var x = this.getBBox().x + this.getBBox().width/2;
-					popup = canvas.popup(x, params.y_offset-15, label, "top-middle").attr(settings.popup_attr);						
-					if(popup.getBBox().x < params.x_offset) {
-						popup.remove();
-						popup = canvas.popup(x, params.y_offset-15, label, "top-left").attr(settings.popup_attr);
-					}
-					else if((popup.getBBox().x + popup.getBBox().width) > (canvas.width - 40)) {
-						popup.remove();
-						popup = canvas.popup(x, params.y_offset-15, label, "top-right").attr(settings.popup_attr);
-					}
-					document.body.style.cursor = "pointer";
-				}, function() {
-					this.attr({r: settings.normal_r});
-					label.hide();
-					popup.remove();
-					document.body.style.cursor = "default";
-				});
+
+
+            //immediate executed function
+		    (function (canvas, event, drawElements) {
+
+		        //attach hover function
+		        for (var j in drawElements) {
+		            drawElements[j].hover(function () {
+
+		                //increase circle width (exclude markers)
+		                if (!event.marker)
+		                    this.attr({ r: settings.highlight_r });
+
+
+		                var name = (event.name.length > 40) ? event.name.substring(0, 40) + "..." : event.name;
+		                title.attr({ text: name });
+		                date.attr({ text: event.date });
+		                label.show();
+		                var x = this.getBBox().x + this.getBBox().width / 2;
+		                popup = canvas.popup(x, event.y_offset - 15, label, "top-middle").attr(settings.popup_attr);
+		                if (popup.getBBox().x < this.x_offset) {
+		                    popup.remove();
+		                    popup = canvas.popup(x, event.y_offset - 15, label, "top-left").attr(settings.popup_attr);
+		                }
+		                else if ((popup.getBBox().x + popup.getBBox().width) > (canvas.width - 40)) {
+		                    popup.remove();
+		                    popup = canvas.popup(x, event.y_offset - 15, label, "top-right").attr(settings.popup_attr);
+		                }
+		                document.body.style.cursor = "pointer";
+		            }, function () {
+
+		                if (!event.marker)
+		                    this.attr({ r: settings.normal_r });
+		                label.hide();
+		                popup.remove();
+		                document.body.style.cursor = "default";
+		            });
+		        }
+		       
 			
 				dots[i].click(function() {
 					fclick(event);
-					for(var j=0;j<dots.length;j++) {
-						dots[j].attr({fill:settings.normal_fill});
-					}
-					this.attr({fill: settings.highlight_fill});
+					//for(var j=0;j<dots.length;j++) {
+					//    dots[j].attr({ fill: circleFill });
+					//}
+					//this.attr({fill: settings.highlight_fill});
 				});
-			})(this, events[i]);
+		    })(this, events[i], drawElements);
 		}
 		return dots;
 	},
@@ -213,11 +320,13 @@ Raphael.fn.timeline = {
 	draw_timescale: function(events, params) {
 		var days_range = params.days_range,
 			x_offset = params.x_offset,
-			y = this.height-50,
+			y = this.height-40,
 			unit = 100,
 			start_date = '',
 			day0 = new Date(events[0].date),
-			dayf = new Date(events[events.length-1].date);
+			dayf = new Date(events[events.length - 1].date);
+
+		params.lineColor = params.lineColor || "#e5eaea";
 			
 		if(days_range > 1) {
 			unit = (this.width-60)/days_range;
@@ -259,9 +368,22 @@ Raphael.fn.timeline = {
 				tick = dd.getFullYear();
 			}
 			this.text(x, y, tick);
+		    //draw vertical lines for each tick
+			this.path("M" + x + "," + (y - 10) + " L" + x + "," + 0).attr({ stroke: params.lineColor, "stroke-width": 1 }).toBack();
 		}
+
+        //draw an horizontal ruler above timescale
+		this.path("M30," + (y - 10) + " L" + (this.width-30) + "," + (y - 10)).attr({ stroke: params.lineColor, "stroke-width": 1 }).toBack();
+
+	    //draw a border for the paper
+		this.rect(0, 0, this.width, this.height).attr({ stroke: params.lineColor, "stroke-width": 1 }).attr({ fill: "#fff" }).toBack();
+		
 	}
 };
+
+var trace = function (s) {
+    console.log(s);
+}
 
 function TimelineHelper() {}
 //derived from: http://stackoverflow.com/questions/979256/how-to-sort-a-json-array
@@ -326,11 +448,23 @@ TimelineHelper.next_unit = function(d, days_range) {
 	}
 };
 
-TimelineHelper.highlight = function(events, dots, index, fclick, settings) {
-	fclick(events[index]);
-	for(var j=0;j<dots.length;j++) {
-		dots[j].attr({fill:settings.normal_fill});
-	}
-	dots[index].attr({fill: settings.highlight_fill});
+TimelineHelper.highlight = function (events, dots, index, fclick, settings) {
+    trace("highlight")
+    if (index >= 0) {
+        fclick(events[index]);
+        dots[index].attr({ fill: settings.highlight_fill });
+    }
+
+    for (var j = 0; j < dots.length; j++) {
+        dots[j].attr({ fill: settings.normal_fill });
+    }
 };
+TimelineHelper.isArray = function (obj) {
+    if (Object.prototype.toString.call(obj) === '[object Array]') {
+        return true;//alert('Array!');
+    }
+    return false;
+};
+
+
 })();
