@@ -1,6 +1,6 @@
 # Timeline.js
 
-This is a fork of the timeline.js Raphaeljs' plugin by mquan.
+This is a fork of the timeline.js Raphaeljs' plugin by mquan (https://github.com/mquan/timeline).
 
 Actual implementation adds:
 
