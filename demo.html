@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>RaphaelJS Timeline</h1>
-	<div id="timeline1" style="border:1px solid #ddd" ></div>
+	<div id="timeline1"  ></div>
     <a class="download " download="timeline.png" href="">
         <i class="fa fa-download"></i> download
     </a>
@@ -26,39 +26,41 @@
         };
 
         /*
-        &#xf1e5;
-        */
-        var todos = [{ name: 'idea formation', date: '2017-4-1', task: '', color:c.gray },
+       &#xf1e5;
+       &#xf041; marker-map
+       &#xf13d; anchor
+       */
+        var todos = [{ name: 'idea formation', date: '2017-4-1', task: '', color: c.gray },
 					{ name: 'Raphael plugin', date: '2017-4-10', task: '', color: c.blue },
-					{ name: 'coding', date: '2017-4-30', task: '', color: c.green, marker: '\uf1e5', marker_fill: c.green },
-					{ name: 'first release', date: '2017-5-7', task: '', color: c.red, marker: '\uf071', marker_fill: c.red }
-		];
+					{ name: 'coding', date: '2017-4-30', task: 'draw event circles and time scale', color: c.green, marker: '\uf041', marker_fill: c.green },
+					{ name: 'first release', date: '2017-5-7', task: 'create demo and README, push to github', color: c.red, marker: '\uf13d', marker_fill: c.red }
+        ];
 
-        var todos2 = [{ name: 'idea', date: '2017-1-28', task: '', color: c.gray },
-					{ name: 'Raphael plugin', date: '2017-4-29', task: '', color: c.blue },
-					{ name: 'coding', date: '2017-5-30', task: '', color: c.yellow },
-					{ name: 'first release', date: '2017-7-2', task: '', color: c.black }
-		];
-        var todos3 = [{ name: 'xyz', date: '2017-3-28', task: '', color: c.gray },
-					{ name: 'Raphael plugin', date: '2017-4-29', task: '', color: c.green },
-					{ name: 'coding', date: '2017-5-30', task: '', color: c.yellow },
-					{ name: 'first release', date: '2017-7-2', task: '', color: c.red }
-		];
-        
+        var todos2 = [{ name: 'idea', date: '2017-1-28', task: 'create a minimal and beautiful timeline', color: c.gray },
+					{ name: 'Raphael plugin', date: '2017-4-29', task: 'mess around with the plugin', color: c.blue, marker_outside: '\uf041', marker_fill: c.blue },
+					{ name: 'coding', date: '2017-5-30', task: 'draw event circles and time scale', color: c.yellow, marker_outside: '\uf041', marker_fill: c.yellow },
+					{ name: 'first release', date: '2017-7-2', task: 'create demo and README, push to github', color: c.black }
+        ];
+        var todos3 = [{ name: 'xyz', date: '2017-3-28', task: 'create a minimal and beautiful timeline', color: c.gray },
+					{ name: 'Raphael plugin', date: '2017-4-29', task: 'mess around with the plugin', color: c.green },
+					{ name: 'coding', date: '2017-5-30', task: 'draw event circles and time scale', color: c.yellow },
+					{ name: 'first release', date: '2017-7-2', task: 'create demo and README, push to github', color: c.red }
+        ];
+
         var d1 = { lineInfo: "Activity #1", events: todos }
         var d2 = { lineInfo: "Activity #2", events: todos2 }
         var d3 = { lineInfo: "Activity #3", events: todos3 }
 
         document.addEventListener('DOMContentLoaded', function () {
-            console.log("load");
+            
             var dataset = [d1, d2, d3];
 
             var p1 = Raphael('timeline1');
             p1.timeline.draw(
-                { dataset: dataset}, //data + settings
+                { dataset: dataset }, //data + settings
                 //callback
                 function (event) {
-                    console.log(event)
+                    console.log(event);
                 }
             );
 

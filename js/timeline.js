@@ -324,9 +324,13 @@ Raphael.fn.timeline = {
 			unit = 100,
 			start_date = '',
 			day0 = new Date(events[0].date),
+            dayNow = new Date(),
 			dayf = new Date(events[events.length - 1].date);
 
 		params.lineColor = params.lineColor || "#e5eaea";
+
+		console.log(day0)
+		console.log(dayNow)
 			
 		if(days_range > 1) {
 			unit = (this.width-60)/days_range;
@@ -370,6 +374,13 @@ Raphael.fn.timeline = {
 			this.text(x, y, tick);
 		    //draw vertical lines for each tick
 			this.path("M" + x + "," + (y - 10) + " L" + x + "," + 0).attr({ stroke: params.lineColor, "stroke-width": 1 }).toBack();
+		}
+
+		if (day0<dayNow && dayNow<dayf) {
+		    //draw vertical lines for the current date
+		    var x = TimelineHelper.getX(day0, dayNow, unit) + x_offset;
+		    this.path("M" + x + "," + (y - 10) + " L" + x + "," + 0).attr({ stroke: params.lineColor, "stroke-width": 2, "stroke-dasharray": "-" }).toBack();
+		
 		}
 
         //draw an horizontal ruler above timescale
