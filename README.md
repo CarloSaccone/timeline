@@ -7,7 +7,7 @@ Actual implementation adds:
 * support to multidimensional datasets (=> more timeline rows on the same chart)
 * support to color customization (data-driven) for events and bars
 * improved timescale visual helpers (added vertical lines for "Now" and timescale steps)
-* print chart as image (credits to: http://bl.ocks.org/battlehorse/1333906)
+* save chart as image (credits to: http://bl.ocks.org/battlehorse/1333906)
 
 ## Output
 
@@ -55,3 +55,10 @@ Actual implementation adds:
         }, false);
 </script>
 ```
+
+## References
+
+* Jquery
+* RaphaelJS
+* fontawesome (for graphic markers)
+* canvg.js (for save as image features)
