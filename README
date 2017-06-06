@@ -1,20 +1,36 @@
-timeline.js is a Raphaeljs' plugin that creates a timeline from an input array of events. Each event element is a json object with 2 required fields 'name' and 'date' (in YYYY-MM-DD format), you can have any number of extra fields. Hovering over the event on the timeline will bring up a bubble showing its name and date. Clicking on the event will highlight it and execute a function supplied by you. This fclick function takes the selected event as input, check out the example for more details.
-Quick start:
+# Timeline.js
 
-<html>
-<head>
-<script src="js/raphael-min.js" type="text/javascript"></script>
-<script src="js/timeline.js" type="text/javascript"></script>
-</head>
-<div id="timeline"></div>
-<script type="text/javascript">
-	var apple_products = [{name:'iPod',date:'2001-10-23',description:'mp3 player'},
-				  {name:'iPhone', date: '2007-6-29',description:'touchscreen smartphone'},
-				  {name:'iPad', date:'2010-1-27', description:'touchscreen tablet'}];
+This is a fork of the timeline.js Raphaeljs' plugin by mquan.
+
+Actual implementation adds:
+
+* support to multidimensional datasets (=> more timeline rows on the same chart)
+* support to color customization (data-driven) for events and bars
+* improved timescale visual helpers (added vertical lines for "Now" and timescale steps)
+* print chart as image (credits to: http://bl.ocks.org/battlehorse/1333906)
+
+## Output
+
+![demo](https://github.com/CarloSaccone/timeline/blob/master/img/timeline.png)
+
+## Usage
+
+```
+			<html>
+			<head>
+			<script src="js/raphael-min.js" type="text/javascript"></script>
+			<script src="js/timeline.js" type="text/javascript"></script>
+			</head>
+			<div id="timeline"></div>
+			<script type="text/javascript">
+				var apple_products = [{name:'iPod',date:'2001-10-23',description:'mp3 player'},
+							  {name:'iPhone', date: '2007-6-29',description:'touchscreen smartphone'},
+							  {name:'iPad', date:'2010-1-27', description:'touchscreen tablet'}];
 				
-	var canvas = Raphael('timeline', 500, 200);
-	canvas.timeline.draw({events: apple_products, color:'#f0f'}, function(product) {
-		alert(product.name + ': ' + product.description);
-	});
-</script>
-</html>
+				var canvas = Raphael('timeline', 500, 200);
+				canvas.timeline.draw({events: apple_products, color:'#f0f'}, function(product) {
+					alert(product.name + ': ' + product.description);
+				});
+			</script>
+			</html>
+```
